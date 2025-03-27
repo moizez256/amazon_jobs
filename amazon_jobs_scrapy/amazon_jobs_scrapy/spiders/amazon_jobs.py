@@ -9,29 +9,29 @@ class AmazonJobsSpider(scrapy.Spider):
     def start_requests(self):
         for url in self.start_urls:
             yield scrapy.Request(url=url,
-                meta=dict(
-                playwright = True,
-                playwright_include_page = True,
-                playwright_context = "default",
-                playwright_page_methods = [
+                meta={
+                "playwright": True,
+                "playwright_include_page": True,
+                "playwright_context": "default",
+                "playwright_page_methods": [
                     PageMethod("wait_for_selector", "//ul[contains(@class, 'jobs-module_root')]/li[10]"),
-                    #PageMethod("wait_for_selector", "//button[@data-test-id='next-page']"),
-                    #PageMethod("wait_for_timeout", 45 * 1000),
                 ],
-                errback=self.errback,
-            ))
+                "errback": self.errback,
+            })
 
     async def parse(self, response):
         page = response.meta["playwright_page"]
         context = page.context
 
-        headers = response.xpath("//div[@role=\"button\"]//h3")
-        metadata = response.xpath("//div[@role=\"button\"]//div[contains(@class, \"metadata-wrapper\")]")
-        bodies = response.xpath(".//div[@role=\"button\"]/div/div[2]/div")
+        self.logger.info("Gathering data from jobs modules...")
+        headers = response.xpath("//div[@role='button']//h3")
+        metadata = response.xpath("//div[@role='button']//div[contains(@class, 'metadata-wrapper')]")
+        bodies = response.xpath(".//div[@role='button']/div/div[2]/div")
 
         for header, metadatum, body in zip(headers, metadata, bodies):
             job_url = response.urljoin(header.xpath("./a/@href").get())
 
+            self.logger.info("Opening job details in new tab...")
             new_tab = await context.new_page()
             await new_tab.goto(job_url)
             await new_tab.wait_for_selector("#job-detail")
@@ -44,8 +44,8 @@ class AmazonJobsSpider(scrapy.Spider):
             yield {
                 "title": header.xpath("./a/text()").get(),
                 "url": response.urljoin(header.xpath("./a/@href").get()),
-                "location": metadatum.xpath("./div[1]/div[2][contains(@class, \"metadatum-module_text\")]//text()").get(),
-                "updated": metadatum.xpath("./div[last()]/div[2][contains(@class, \"metadatum-module_text\")]//text()").get(),
+                "location": metadatum.xpath("./div[1]/div[2][contains(@class, 'metadatum-module_text')]//text()").get(),
+                "updated": metadatum.xpath("./div[last()]/div[2][contains(@class, 'metadatum-module_text')]//text()").get(),
                 "short_description": body.xpath("./text()").getall(),
                 "job_id": job_id,
                 "full_description": full_description,
@@ -56,8 +56,8 @@ class AmazonJobsSpider(scrapy.Spider):
             await new_tab.close()
 
         next_button = page.locator("//button[@data-test-id='next-page']")
-        if await next_button.is_visible():
-            self.logger.info("Paginación encontrada. Pasando a la siguiente página sin recargar...")
+        if await next_button:
+            self.logger.info("Pagination found, moving to next 10 results...")
 
             last_job_title = header.xpath("./a/text()").get()
 
@@ -80,16 +80,14 @@ class AmazonJobsSpider(scrapy.Spider):
 
         await page.close()
 
-    # def details_parse(self, response):
-    #     job = response.xpath("//div[@id='job-detail']")
-    #     return {
-    #         "job_id": job.xpath(".//div[@class='details-line']/p/text()").re_first(r"Job ID: (\d+)"),
-    #         "full_description": job.xpath(".//div[@class='content']/div/*[text() = 'DESCRIPTION']/../p/text()").getall(),
-    #         "basic_qual": job.xpath(".//div[@class='content']/div/*[text() = 'BASIC QUALIFICATIONS']/../p/text()").getall(),
-    #         "preferred_qual": job.xpath(".//div[@class='content']/div/*[text() = 'PREFERRED QUALIFICATIONS']/../p/text()").getall(),
-    #     }
-
-    async def errback(self, failure):
+    def errback(self, failure):
         page = failure.request.meta.get("playwright_page")
-        if page:
-            await page.close()
+        self.logger.info(
+            "Handling failure in errback, request=%r, exception=%r", failure.request, failure.value)
+        page.close()
+
+    # async def errback(self, failure):
+    #     page = failure.request.meta.get("playwright_page")
+    #     if page:
+    #         self.logger.error("Error - Closing page...")
+    #         await page.close()
