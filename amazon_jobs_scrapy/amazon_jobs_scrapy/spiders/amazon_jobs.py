@@ -8,16 +8,17 @@ class AmazonJobsSpider(scrapy.Spider):
 
     def start_requests(self):
         for url in self.start_urls:
-            yield scrapy.Request(url=url,
+            yield scrapy.Request(
+                url=url,
                 meta={
-                "playwright": True,
-                "playwright_include_page": True,
-                "playwright_context": "default",
-                "playwright_page_methods": [
-                    PageMethod("wait_for_selector", "//ul[contains(@class, 'jobs-module_root')]/li[10]"),
-                ],
-                "errback": self.errback,
-            })
+                    "playwright": True,
+                    "playwright_include_page": True,
+                    "playwright_context": "default",
+                    "playwright_page_methods": [
+                        PageMethod("wait_for_selector", "//ul[contains(@class, 'jobs-module_root')]/li[10]"),
+                    ],
+                    "errback": self.errback,
+                },)
 
     async def parse(self, response):
         page = response.meta["playwright_page"]
@@ -56,7 +57,7 @@ class AmazonJobsSpider(scrapy.Spider):
             await new_tab.close()
 
         next_button = page.locator("//button[@data-test-id='next-page']")
-        if await next_button:
+        if await next_button.is_visible():
             self.logger.info("Pagination found, moving to next 10 results...")
 
             last_job_title = header.xpath("./a/text()").get()
