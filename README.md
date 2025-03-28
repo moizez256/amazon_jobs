@@ -24,10 +24,10 @@ A Scrapy spider with Playwright integration to scrape job listings from Amazon's
 ## Installation
 
 1. Clone the repository:
-   ```bash
-   git clone https://github.com/yourusername/amazon-jobs-scraper.git
-   cd amazon-jobs-scraper
-   ```
+  ```bash
+  git clone https://github.com/yourusername/amazon-jobs-scraper.git
+  cd amazon-jobs-scraper
+  ```
 2. Create and activate a virtual environment:
   ```bash
   python -m venv venv
@@ -73,10 +73,7 @@ Supported output formats:
 ### Testing
 Run tests with pytest:
   ```bash
-  Copy
   pytest tests/ -v
-  Contributing
-  Fork the project
   ```
 
 ## License
