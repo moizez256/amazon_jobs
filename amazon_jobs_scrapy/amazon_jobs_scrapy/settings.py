@@ -99,5 +99,5 @@ DOWNLOAD_HANDLERS = {
 
 PLAYWRIGHT_LAUNCH_OPTIONS = {
     "headless": False,
-    "timeout": 300 * 1000,
+    "timeout": 60000,
 }
