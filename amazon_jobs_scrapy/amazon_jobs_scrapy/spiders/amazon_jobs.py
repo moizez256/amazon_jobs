@@ -37,7 +37,6 @@ class AmazonJobsSpider(scrapy.Spider):
         metadata = response.xpath("//div[@role='button']//div[contains(@class, 'metadata-wrapper')]")
         bodies = response.xpath(".//div[@role='button']/div/div[2]/div")
 
-        requests = []
         for header, metadatum, body in zip(headers, metadata, bodies):
             job_url = response.urljoin(header.xpath("./a/@href").get())
             job_id = header.xpath("./a/@href").re_first(r"/job/(\d+)")
@@ -48,6 +47,7 @@ class AmazonJobsSpider(scrapy.Spider):
                 "location": metadatum.xpath("./div[1]/div[2][contains(@class, 'metadatum-module_text')]//text()").get(),
                 "updated": metadatum.xpath("./div[last()]/div[2][contains(@class, 'metadatum-module_text')]//text()").get(),
                 "short_description": body.xpath("./text()").getall(),
+                "job_id": job_id,
             }
 
             self.logger.info("Opening job details in new tab...")
