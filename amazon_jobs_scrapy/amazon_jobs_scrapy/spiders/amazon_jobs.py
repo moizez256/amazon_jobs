@@ -39,7 +39,7 @@ class AmazonJobsSpider(scrapy.Spider):
 
         for header, metadatum, body in zip(headers, metadata, bodies):
             job_url = response.urljoin(header.xpath("./a/@href").get())
-            job_id = header.xpath("./a/@href").re_first(r"/job/(\d+)")
+            job_id = header.xpath("./a/@href").re_first(r"/jobs/(\d+)")
 
             data = {
                 "title": header.xpath("./a/text()").get(),
